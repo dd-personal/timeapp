@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Interval Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        label {
+            font-weight: bold;
+        }
+        input {
+            padding: 5px;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Time Interval Calculator</h1>
+    <label for="startTime">Enter Start Time (HHmm): </label>
+    <input type="text" id="startTime" placeholder="e.g., 1330">
+    <br>
+    <label for="hours">Number of Hours: </label>
+    <input type="number" id="hours" value="12" min="1">
+    <br>
+    <label for="interval1">Interval 1 (minutes): </label>
+    <input type="number" id="interval1" value="3" min="1">
+    <label for="interval2">Interval 2 (minutes): </label>
+    <input type="number" id="interval2" value="13" min="1">
+    <label for="interval3">Interval 3 (minutes): </label>
+    <input type="number" id="interval3" value="26" min="1">
+    <label for="interval4">Interval 4 (minutes): </label>
+    <input type="number" id="interval4" value="55" min="1">
+    <br>
+    <button onclick="calculateIntervals()">Calculate</button>
+
+    <table id="resultsTable">
+        <thead>
+            <tr>
+                <!-- Columns will be dynamically generated -->
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Results will be populated here -->
+        </tbody>
+    </table>
+
+    <script>
+        function calculateIntervals() {
+            const startTimeInput = document.getElementById('startTime').value;
+            const hoursInput = parseInt(document.getElementById('hours').value, 10);
+            const interval1 = parseInt(document.getElementById('interval1').value, 10);
+            const interval2 = parseInt(document.getElementById('interval2').value, 10);
+            const interval3 = parseInt(document.getElementById('interval3').value, 10);
+            const interval4 = parseInt(document.getElementById('interval4').value, 10);
+
+            const resultsTableHead = document.querySelector('#resultsTable thead tr');
+            const resultsTableBody = document.querySelector('#resultsTable tbody');
+
+            // Clear previous results
+            resultsTableHead.innerHTML = '';
+            resultsTableBody.innerHTML = '';
+
+            // Validate start time
+            if (!/^\d{4}$/.test(startTimeInput)) {
+                alert('Invalid time format. Please enter time in HHmm format.');
+                return;
+            }
+
+            const hours = parseInt(startTimeInput.substring(0, 2), 10);
+            const minutes = parseInt(startTimeInput.substring(2, 4), 10);
+
+            if (hours > 23 || minutes > 59) {
+                alert('Invalid time. Hours must be <= 23 and minutes <= 59.');
+                return;
+            }
+
+            const startTime = new Date();
+            startTime.setHours(hours, minutes, 0, 0);
+
+            const intervals = [interval1, interval2, interval3, interval4];
+            const intervalData = intervals.reduce((acc, interval) => {
+                acc[interval] = [];
+                return acc;
+            }, {});
+
+            // Calculate times for each interval
+            for (let i = 0; i <= hoursInput * 60; i++) {
+                const currentTime = new Date(startTime.getTime() + i * 60000);
+
+                intervals.forEach(interval => {
+                    if (i % interval === 0) {
+                        intervalData[interval].push(currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+                    }
+                });
+            }
+
+            // Generate table headers
+            intervals.forEach(interval => {
+                const th = document.createElement('th');
+                th.textContent = `${interval} Minutes`;
+                resultsTableHead.appendChild(th);
+            });
+
+            // Determine the maximum number of rows needed
+            const maxRows = Math.max(...Object.values(intervalData).map(arr => arr.length));
+
+            // Populate the table
+            for (let i = 0; i < maxRows; i++) {
+                const row = document.createElement('tr');
+
+                intervals.forEach(interval => {
+                    const cell = document.createElement('td');
+                    cell.textContent = intervalData[interval][i] || ''; // Use empty string if no data
+                    row.appendChild(cell);
+                });
+
+                resultsTableBody.appendChild(row);
+            }
+        }
+    </script>
+</body>
+</html>
