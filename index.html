@@ -102,8 +102,8 @@
     </button>
 
     <h1>Time Interval Calculator</h1>
-    <label for="startTime">Enter Start Time (HHmm): </label>
-    <input type="text" id="startTime" placeholder="e.g., 1330">
+    <label for="startTime">Enter Start Time (HHmmss): </label>
+    <input type="text" id="startTime" placeholder="e.g., 133052">
     <br>
     <label for="hours">Number of Hours: </label>
     <input type="number" id="hours" value="12" min="1">
@@ -147,22 +147,23 @@
             resultsTableHead.innerHTML = '';
             resultsTableBody.innerHTML = '';
 
-            // Validate start time
-            if (!/^\d{4}$/.test(startTimeInput)) {
-                alert('Invalid time format. Please enter time in HHmm format.');
+            // Validate start time (HHmmss format)
+            if (!/^\d{6}$/.test(startTimeInput)) {
+                alert('Invalid time format. Please enter time in HHmmss format.');
                 return;
             }
 
             const hours = parseInt(startTimeInput.substring(0, 2), 10);
             const minutes = parseInt(startTimeInput.substring(2, 4), 10);
+            const seconds = parseInt(startTimeInput.substring(4, 6), 10);
 
-            if (hours > 23 || minutes > 59) {
-                alert('Invalid time. Hours must be <= 23 and minutes <= 59.');
+            if (hours > 23 || minutes > 59 || seconds > 59) {
+                alert('Invalid time. Hours must be <= 23, minutes <= 59, and seconds <= 59.');
                 return;
             }
 
             const startTime = new Date();
-            startTime.setHours(hours, minutes, 0, 0);
+            startTime.setHours(hours, minutes, seconds, 0);
 
             const intervals = [interval1, interval2, interval3, interval4];
             const intervalData = intervals.reduce((acc, interval) => {
@@ -176,7 +177,19 @@
 
                 intervals.forEach(interval => {
                     if (i % interval === 0) {
-                        intervalData[interval].push(currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+                        const militaryTime = currentTime.toLocaleTimeString('en-US', {
+                            hour12: false,
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                        }).replace(/:/g, ''); // Remove ":" separators
+                        const standardTime = currentTime.toLocaleTimeString('en-US', {
+                            hour12: true,
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                        });
+                        intervalData[interval].push(`${militaryTime} (${standardTime})`);
                     }
                 });
             }
