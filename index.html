@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Time Interval Calculator</title>
+    <!-- Add Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         /* Dark theme (default) */
         body {
@@ -57,12 +59,16 @@
             position: fixed;
             top: 20px;
             right: 20px;
-            padding: 10px 20px;
-            font-size: 16px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
             background-color: #007bff;
             color: white;
             border: none;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .theme-toggle:hover {
             background-color: #0056b3;
@@ -90,7 +96,11 @@
     </style>
 </head>
 <body class="dark-theme">
-    <button class="theme-toggle" onclick="toggleTheme()">Switch to Light Mode</button>
+    <!-- Dark mode toggle button -->
+    <button class="theme-toggle" onclick="toggleTheme()">
+        <i class="fas fa-moon"></i> <!-- Moon icon for dark mode -->
+    </button>
+
     <h1>Time Interval Calculator</h1>
     <label for="startTime">Enter Start Time (HHmm): </label>
     <input type="text" id="startTime" placeholder="e.g., 1330">
@@ -199,15 +209,18 @@
         function toggleTheme() {
             const body = document.body;
             const themeToggleButton = document.querySelector('.theme-toggle');
+            const icon = themeToggleButton.querySelector('i');
 
             if (body.classList.contains('dark-theme')) {
                 body.classList.remove('dark-theme');
                 body.classList.add('light-theme');
-                themeToggleButton.textContent = 'Switch to Dark Mode';
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-lightbulb'); // Lightbulb icon for light mode
             } else {
                 body.classList.remove('light-theme');
                 body.classList.add('dark-theme');
-                themeToggleButton.textContent = 'Switch to Light Mode';
+                icon.classList.remove('fa-lightbulb');
+                icon.classList.add('fa-moon'); // Moon icon for dark mode
             }
         }
     </script>
