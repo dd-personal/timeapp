@@ -5,12 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Time Interval Calculator</title>
     <style>
+        /* Dark theme (default) */
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
+            background-color: #121212;
+            color: #ffffff;
         }
         h1 {
-            color: #333;
+            color: #ffffff;
         }
         label {
             font-weight: bold;
@@ -19,6 +22,9 @@
             padding: 5px;
             font-size: 16px;
             margin: 5px;
+            background-color: #333333;
+            color: #ffffff;
+            border: 1px solid #555555;
         }
         button {
             padding: 10px 20px;
@@ -38,15 +44,53 @@
         }
         th, td {
             padding: 10px;
-            border: 1px solid #ddd;
+            border: 1px solid #555555;
             text-align: center;
         }
         th {
+            background-color: #333333;
+        }
+        td {
+            background-color: #1e1e1e;
+        }
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .theme-toggle:hover {
+            background-color: #0056b3;
+        }
+
+        /* Light theme */
+        body.light-theme {
+            background-color: #ffffff;
+            color: #000000;
+        }
+        body.light-theme h1 {
+            color: #000000;
+        }
+        body.light-theme input {
+            background-color: #ffffff;
+            color: #000000;
+            border: 1px solid #cccccc;
+        }
+        body.light-theme th {
             background-color: #f2f2f2;
+        }
+        body.light-theme td {
+            background-color: #ffffff;
         }
     </style>
 </head>
-<body>
+<body class="dark-theme">
+    <button class="theme-toggle" onclick="toggleTheme()">Switch to Light Mode</button>
     <h1>Time Interval Calculator</h1>
     <label for="startTime">Enter Start Time (HHmm): </label>
     <input type="text" id="startTime" placeholder="e.g., 1330">
@@ -77,6 +121,7 @@
     </table>
 
     <script>
+        // Function to calculate intervals
         function calculateIntervals() {
             const startTimeInput = document.getElementById('startTime').value;
             const hoursInput = parseInt(document.getElementById('hours').value, 10);
@@ -147,6 +192,22 @@
                 });
 
                 resultsTableBody.appendChild(row);
+            }
+        }
+
+        // Function to toggle between dark and light themes
+        function toggleTheme() {
+            const body = document.body;
+            const themeToggleButton = document.querySelector('.theme-toggle');
+
+            if (body.classList.contains('dark-theme')) {
+                body.classList.remove('dark-theme');
+                body.classList.add('light-theme');
+                themeToggleButton.textContent = 'Switch to Dark Mode';
+            } else {
+                body.classList.remove('light-theme');
+                body.classList.add('dark-theme');
+                themeToggleButton.textContent = 'Switch to Light Mode';
             }
         }
     </script>
