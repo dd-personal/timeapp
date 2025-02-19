@@ -21,8 +21,20 @@ window.addEventListener("DOMContentLoaded", () => {
  * Theme Toggle
  ****************************************************/
 function toggleTheme() {
-  document.body.classList.toggle("light-theme");
-  currentTheme = document.body.classList.contains("light-theme") ? "light" : "dark";
+  const body = document.body;
+  body.classList.toggle('light-theme');
+  
+  // Grab the <i> element inside the toggle button
+  const themeIcon = document.querySelector('.theme-toggle i');
+
+  // If we’re in light mode, show the moon icon; if dark mode, show the sun icon
+  if (body.classList.contains('light-theme')) {
+    themeIcon.classList.remove('fa-sun');
+    themeIcon.classList.add('fa-moon');
+  } else {
+    themeIcon.classList.remove('fa-moon');
+    themeIcon.classList.add('fa-sun');
+  }
 }
 
 /****************************************************
