@@ -1,0 +1,475 @@
+:root {
+  --bg-dark: #121212;
+  --text-dark: #ffffff;
+  --bg-light: #ffffff;
+  --text-light: #000000;
+
+  --primary: #007bff;
+  --secondary: #666;
+
+  /* table-bg might be partially transparent, but we'll avoid using it 
+     for the alarm dropdown to ensure it's fully opaque */
+  --table-bg-dark: rgba(255, 255, 255, 0.1);
+  --table-bg-light: rgba(0, 0, 0, 0.05);
+}
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  background-color: var(--bg-dark);
+  color: var(--text-dark);
+  transition: all 0.3s;
+}
+
+body.light-theme {
+  background-color: var(--bg-light);
+  color: var(--text-light);
+}
+
+/* Make sure all basic elements inherit color in both themes */
+label,
+input,
+button,
+table,
+th,
+td,
+div {
+  color: inherit;
+  font-family: inherit;
+  font-size: 1em;
+}
+
+/* Basic input styling in dark mode */
+input,
+select {
+  background-color: var(--table-bg-dark);
+  border: 1px solid var(--secondary);
+  transition: all 0.3s;
+  color: inherit;
+}
+
+/* Light theme override for inputs/selects */
+body.light-theme input,
+body.light-theme select {
+  background-color: var(--table-bg-light);
+  border-color: #999;
+  color: var(--text-light);
+}
+
+::placeholder {
+  color: #bbb;
+}
+body.light-theme ::placeholder {
+  color: #666;
+}
+
+/****************************************************
+ * Tabs
+ ****************************************************/
+.tabs {
+  margin: 20px auto;
+  max-width: 800px;
+  text-align: center;
+}
+
+.tab-button {
+  /* Inactive tab = gray */
+  background-color: var(--secondary);
+  color: white;
+  border: none;
+  border-radius: 4px 4px 0 0;
+  cursor: pointer;
+  margin: 0 5px;
+  padding: 10px 20px;
+  transition: all 0.3s;
+}
+
+.tab-button.active {
+  /* Active tab = blue */
+  background-color: var(--primary);
+}
+
+.tab-content {
+  display: none;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/****************************************************
+ * Theme Toggle
+ ****************************************************/
+.theme-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/****************************************************
+ * Timers Container
+ ****************************************************/
+.timers-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+}
+
+/****************************************************
+ * Timer Wrapper
+ ****************************************************/
+.timer-wrapper {
+  border: 1px solid var(--secondary);
+  border-radius: 6px;
+  padding: 15px;
+  margin: 10px;
+  min-width: 280px;
+  background-color: var(--table-bg-dark);
+}
+body.light-theme .timer-wrapper {
+  background-color: var(--table-bg-light);
+}
+
+/****************************************************
+ * Timer Header (remove button row)
+ ****************************************************/
+.timer-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+.remove-timer-button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  color: inherit;
+}
+.remove-timer-button i {
+  pointer-events: none;
+}
+
+/****************************************************
+ * Timer Container
+ ****************************************************/
+.timer-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.timer-inputs {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+.timer-inputs input {
+  width: 100px;
+  padding: 12px;
+  font-size: 1.2em;
+  text-align: center;
+  border-radius: 6px;
+}
+
+/****************************************************
+ * Timer Display
+ ****************************************************/
+.timer-display {
+  font-size: 2.5em;
+  margin: 20px 0;
+  font-family: monospace;
+  text-align: center;
+  width: 100%;
+}
+
+/****************************************************
+ * Timer Buttons
+ ****************************************************/
+.timer-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+}
+.silence-button {
+  display: none !important;
+}
+.silence-button.visible {
+  display: block !important;
+}
+
+/****************************************************
+ * Custom Alarm Dropdown
+ ****************************************************/
+/* The container around the label, hidden input, trigger, menu */
+.alarm-dropdown {
+  position: relative;
+  display: inline-block;
+  text-align: left; /* so label & trigger align well */
+  margin: 15px 0;
+}
+
+/* The “trigger” is fully opaque in both themes */
+.alarm-dropdown-trigger {
+  background-color: var(--bg-dark) !important;  /* solid dark theme by default */
+  color: var(--text-dark) !important;
+  border: 1px solid var(--secondary);
+  border-radius: 4px;
+  padding: 8px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.3s;
+}
+
+/* Light theme override => solid white */
+body.light-theme .alarm-dropdown-trigger {
+  background-color: var(--bg-light) !important;
+  color: var(--text-light) !important;
+  border-color: #ccc;
+}
+
+/* The hidden menu that appears on .open; also fully opaque */
+.alarm-dropdown-menu {
+  display: none; /* hidden by default */
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 150px;
+
+  background-color: var(--bg-dark) !important;  /* solid dark by default */
+  color: var(--text-dark) !important;
+  border: 1px solid var(--secondary);
+  border-radius: 4px;
+  z-index: 999;
+  transition: all 0.3s;
+}
+
+/* Light theme => solid white menu */
+body.light-theme .alarm-dropdown-menu {
+  background-color: var(--bg-light) !important;
+  color: var(--text-light) !important;
+  border-color: #ccc;
+}
+
+/* Show the menu when .open is toggled via JS */
+.alarm-dropdown.open .alarm-dropdown-menu {
+  display: block;
+}
+
+/* Each clickable option */
+.alarm-dropdown-option {
+  padding: 8px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.alarm-dropdown-option:hover {
+  background-color: var(--primary);
+  color: #fff;
+}
+
+/****************************************************
+ * Event Log Container
+ ****************************************************/
+.event-log-container {
+  margin-top: 20px;
+}
+.event-log-table {
+  width: 100%;
+  margin: 0 auto;
+  background-color: var(--table-bg-dark);
+  border-collapse: collapse;
+  text-align: center;
+}
+.event-log-table th,
+.event-log-table td {
+  border: 1px solid var(--secondary);
+  padding: 8px;
+}
+body.light-theme .event-log-table {
+  background-color: var(--table-bg-light);
+  border-color: #ccc;
+}
+
+/****************************************************
+ * Threshold Input
+ ****************************************************/
+.threshold-input {
+  margin: 20px auto;
+  text-align: center;
+}
+.threshold-input input {
+  width: 120px;
+  padding: 8px;
+  text-align: center;
+  border-radius: 4px;
+}
+
+/****************************************************
+ * Add Timer Button
+ ****************************************************/
+.add-timer-container {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.add-timer-button {
+  background-color: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1em;
+}
+.add-timer-button:hover {
+  filter: brightness(1.2);
+}
+
+/****************************************************
+ * Interval Calculator
+ ****************************************************/
+.calculator-container {
+  padding: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.calculator-controls {
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.input-group {
+  margin: 15px 0;
+}
+.input-group label {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.interval-inputs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.interval-group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.interval-group input {
+  width: 100px;
+  padding: 8px;
+  margin-left: 10px;
+  border-radius: 4px;
+}
+
+/* Results table (interval calculator) */
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  background-color: var(--table-bg-dark);
+  text-align: center;
+}
+.results-table th,
+.results-table td {
+  padding: 12px;
+  border: 1px solid var(--secondary);
+}
+body.light-theme .results-table {
+  background-color: var(--table-bg-light);
+  border-color: #ccc;
+}
+
+/****************************************************
+ * Buttons: Hover & Focus
+ ****************************************************/
+button {
+  padding: 10px 20px;
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+button:hover {
+  filter: brightness(1.2);
+}
+
+input[type="text"], 
+input[type="number"] {
+  transition: all 0.3s;
+  font-size: 16px;
+}
+input[type="text"]:focus,
+input[type="number"]:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 5px var(--primary);
+  outline: none;
+}
+
+body.light-theme #startTime,
+body.light-theme #hours,
+body.light-theme .interval-group input {
+  background-color: var(--table-bg-light);
+  border-color: #ccc;
+  color: var(--text-light);
+}
+
+.heading-with-tooltip {
+  display: flex;         /* Use flex, not inline-flex */
+  align-items: center;   /* Center them vertically (or baseline if you prefer) */
+  gap: 8px;              /* Space between the text and the icon */
+}
+
+/* Remove default H1 margin so it doesn’t push the icon down */
+.heading-with-tooltip .interval-heading {
+  margin: 0;
+}
+
+/* Ensure the icon is normal-sized and doesn't get scaled up */
+.tooltip-trigger {
+  font-size: 1rem;
+  cursor: pointer;
+  color: var(--primary); /* or your preferred color */
+}
+.tooltip-trigger i {
+  vertical-align: middle; /* helps keep the icon aligned */
+}
+
+/* The tooltip itself is absolutely positioned relative to .heading-with-tooltip */
+.tooltip-content {
+  display: none;
+  position: absolute;
+  top: 2.2em;    /* Just below the heading line; tweak as needed */
+  left: 0;
+  max-width: 220px;
+  background-color: #333;
+  color: #fff;
+  border: 1px solid #666;
+  padding: 10px;
+  border-radius: 4px;
+  z-index: 999;
+  font-size: 0.9em;
+}
+body.light-theme .tooltip-content {
+  background-color: #f8f8f8;
+  color: #000;
+  border-color: #ccc;
+}
