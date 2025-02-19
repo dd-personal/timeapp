@@ -29,11 +29,11 @@ function toggleTheme() {
 
   // If we’re in light mode, show the moon icon; if dark mode, show the sun icon
   if (body.classList.contains('light-theme')) {
-    themeIcon.classList.remove('fa-sun');
+    themeIcon.classList.remove('fa-lightbulb');
     themeIcon.classList.add('fa-moon');
   } else {
     themeIcon.classList.remove('fa-moon');
-    themeIcon.classList.add('fa-sun');
+    themeIcon.classList.add('fa-lightbulb');
   }
 }
 
