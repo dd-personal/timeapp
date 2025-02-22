@@ -1,9 +1,25 @@
 /****************************************************
+ * Polyfills for requestAnimationFrame and performance.now
+ ****************************************************/
+(function() {
+  if (!window.requestAnimationFrame) {
+    window.requestAnimationFrame = function(callback) {
+      return window.setTimeout(callback, 1000 / 60);
+    };
+  }
+  if (!window.performance || !performance.now) {
+    performance.now = function() {
+      return new Date().getTime();
+    };
+  }
+})();
+
+/****************************************************
  * Global Variables
  ****************************************************/
 let currentTheme = "dark";          // Track current theme
 const timers = [];                  // Holds data for each Chrono Timer
-const maxTimers = 3;               // Max number of timers allowed
+const maxTimers = 3;                // Max number of timers allowed
 
 /**
  * Ensure one timer is shown right away:
@@ -203,7 +219,7 @@ function createNewTimer() {
 
     isRunning: false,
     remainingSeconds: 0,
-    intervalId: null,
+    rafId: null,
     alarmAudio: null,
 
     // for logging threshold differences
@@ -234,9 +250,9 @@ function createNewTimer() {
  ****************************************************/
 function removeTimer(t) {
   // Stop the countdown if still running
-  if (t.intervalId) {
-    clearInterval(t.intervalId);
-    t.intervalId = null;
+  if (t.rafId) {
+    cancelAnimationFrame(t.rafId);
+    t.rafId = null;
   }
   // Silence any alarm
   if (t.alarmAudio) {
@@ -323,9 +339,9 @@ function handleStartOrReset(t) {
     logEventManualStatus(t, "Reset (timer ended early)", "✔ (timer ended early)");
 
     // Stop old countdown
-    if (t.intervalId) {
-      clearInterval(t.intervalId);
-      t.intervalId = null;
+    if (t.rafId) {
+      cancelAnimationFrame(t.rafId);
+      t.rafId = null;
     }
     // Restart
     startTimer(t);
@@ -349,19 +365,20 @@ function handleStartOrReset(t) {
 }
 
 /****************************************************
- * Start the Countdown
+ * Start the Countdown using requestAnimationFrame
  ****************************************************/
 function startTimer(t) {
-  // Clear old interval if any
-  if (t.intervalId) {
-    clearInterval(t.intervalId);
-    t.intervalId = null;
+  // Cancel any previous animation frame if exists
+  if (t.rafId) {
+    cancelAnimationFrame(t.rafId);
+    t.rafId = null;
   }
 
   // Parse user input
   const minutes = parseInt(t.minutesEl.value, 10) || 0;
   const seconds = parseInt(t.secondsEl.value, 10) || 0;
-  t.remainingSeconds = Math.max(0, minutes * 60 + seconds);
+  let totalSeconds = Math.max(0, minutes * 60 + seconds);
+  t.remainingSeconds = totalSeconds;
 
   // Alarm setup
   if (t.alarmAudio) {
@@ -375,32 +392,37 @@ function startTimer(t) {
   // Hide silence button
   t.silenceBtn.classList.remove("visible");
 
-  // We reset endCycleActionTaken since we have a fresh countdown
+  // Reset end cycle action flag
   t.endCycleActionTaken = false;
 
   // Immediately update display
   updateDisplay(t);
 
-  // Actually run the countdown
-  t.intervalId = setInterval(() => {
-    if (t.remainingSeconds > 0) {
-      t.remainingSeconds--;
+  // Setup timing using performance.now
+  t.startTime = performance.now();
+  t.endTime = t.startTime + totalSeconds * 1000;
+
+  // Define tick function using requestAnimationFrame
+  function tick() {
+    const now = performance.now();
+    const remainingMs = t.endTime - now;
+    if (remainingMs > 0) {
+      t.remainingSeconds = Math.ceil(remainingMs / 1000);
       updateDisplay(t);
+      t.rafId = requestAnimationFrame(tick);
     } else {
       // Timer done
-      clearInterval(t.intervalId);
-      t.intervalId = null;
-
-      // Sound alarm
+      t.remainingSeconds = 0;
+      updateDisplay(t);
       if (t.alarmAudio) {
         t.alarmAudio.play();
         t.silenceBtn.classList.add("visible");
       }
-
-      // The button remains "Reset" for after-end resets.
       t.currentState = "ended";
     }
-  }, 1000);
+  }
+  // Start the animation loop
+  t.rafId = requestAnimationFrame(tick);
 }
 
 function updateDisplay(t) {
