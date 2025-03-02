@@ -20,6 +20,7 @@
 let currentTheme = "dark";          // Track current theme
 const timers = [];                  // Holds data for each Chrono Timer
 const maxTimers = 3;                // Max number of timers allowed
+let notificationPermissionAsked = false;  // Track if notification permission requested
 
 /**
  * Ensure one timer is shown right away:
@@ -148,16 +149,17 @@ function createNewTimer() {
       <div class="threshold-input">
         <label for="${timerId}-thresholdMin">Target Audit Time (min):</label>
         <input type="number" id="${timerId}-thresholdMin" min="0" />
-       <span class="tooltip-trigger" id="${timerId}-thresholdTooltipTrigger">
-        <i class="fas fa-question-circle"></i>
-      </span>
-      <div class="tooltip-content" id="${timerId}-thresholdTooltipContent">
-        <p>
-          Set a desired audit time in minutes. As the timer goes off and the timestamps are logged the value set in this field will give a 
-            ✓ for each check that is lower, and a ✘ if the check is late. <p></p> Every check that is late will also show you the time it should have been. <p></p> E.G. entering 60 minutes here would mean that every 55 minute check
+        <span class="tooltip-trigger" id="${timerId}-thresholdTooltipTrigger">
+          <i class="fas fa-question-circle"></i>
+        </span>
+        <div class="tooltip-content" id="${timerId}-thresholdTooltipContent">
+          <p>
+            Set a desired audit time in minutes. As the timer goes off and the timestamps are logged the value set in this field will give a 
+            ✓ for each check that is lower, and a ✘ if the check is late. 
+            <p></p> Every check that is late will also show you the time it should have been. <p></p> E.G. entering 60 minutes here would mean that every 55 minute check
             would be good. If you didn't restart the timer until 61 minutes it would show as a bad check and give you the correct timestamp. 
-        </p>
-      </div>
+          </p>
+        </div>
       </div>
       <table class="event-log-table">
         <thead>
@@ -220,6 +222,7 @@ function createNewTimer() {
     isRunning: false,
     remainingSeconds: 0,
     rafId: null,
+    fallbackTimeout: null,
     alarmAudio: null,
 
     // for logging threshold differences
@@ -253,6 +256,11 @@ function removeTimer(t) {
   if (t.rafId) {
     cancelAnimationFrame(t.rafId);
     t.rafId = null;
+  }
+  // Clear any pending alarm timeout
+  if (t.fallbackTimeout) {
+    clearTimeout(t.fallbackTimeout);
+    t.fallbackTimeout = null;
   }
   // Silence any alarm
   if (t.alarmAudio) {
@@ -329,6 +337,11 @@ function setupAlarmDropdown(t) {
 function handleStartOrReset(t) {
   if (t.currentState === "idle") {
     // We are idle => user clicked "Start"
+    // Request notification permission if not already granted (for background alarm notifications)
+    if ('Notification' in window && Notification.permission === "default" && !notificationPermissionAsked) {
+      Notification.requestPermission();
+      notificationPermissionAsked = true;
+    }
     logEventWithThreshold(t, "Start");
     startTimer(t);
     t.startResetBtn.innerHTML = `<i class="fas fa-undo"></i> Reset`;
@@ -404,6 +417,10 @@ function startTimer(t) {
 
   // Define tick function using requestAnimationFrame
   function tick() {
+    // If timer ended while tab was inactive (fallback triggered), exit
+    if (t.currentState === "ended") {
+      return;
+    }
     const now = performance.now();
     const remainingMs = t.endTime - now;
     if (remainingMs > 0) {
@@ -412,6 +429,10 @@ function startTimer(t) {
       t.rafId = requestAnimationFrame(tick);
     } else {
       // Timer done
+      if (t.fallbackTimeout) {
+        clearTimeout(t.fallbackTimeout);
+        t.fallbackTimeout = null;
+      }
       t.remainingSeconds = 0;
       updateDisplay(t);
       if (t.alarmAudio) {
@@ -419,10 +440,40 @@ function startTimer(t) {
         t.silenceBtn.classList.add("visible");
       }
       t.currentState = "ended";
+      if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+        const timerNumber = t.timerId.replace('timer','');
+        const nTitle = timerNumber ? `Timer ${timerNumber} Complete` : 'Timer Complete';
+        new Notification(nTitle, { body: "Your timer has finished." });
+      }
     }
   }
   // Start the animation loop
   t.rafId = requestAnimationFrame(tick);
+
+  // Set up a fallback timeout to ensure alarm plays on time even if tab is inactive
+  if (t.fallbackTimeout) {
+    clearTimeout(t.fallbackTimeout);
+  }
+  t.fallbackTimeout = setTimeout(() => {
+    if (t.currentState !== "ended") {
+      if (t.rafId) {
+        cancelAnimationFrame(t.rafId);
+        t.rafId = null;
+      }
+      t.remainingSeconds = 0;
+      updateDisplay(t);
+      if (t.alarmAudio) {
+        t.alarmAudio.play();
+        t.silenceBtn.classList.add("visible");
+      }
+      t.currentState = "ended";
+      if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+        const timerNumber = t.timerId.replace('timer','');
+        const nTitle = timerNumber ? `Timer ${timerNumber} Complete` : 'Timer Complete';
+        new Notification(nTitle, { body: "Your timer has finished." });
+      }
+    }
+  }, totalSeconds * 1000);
 }
 
 function updateDisplay(t) {
@@ -451,7 +502,7 @@ function handleSilence(t) {
 
 /****************************************************
  * Logging & Threshold Logic
- ****************************************************/
+ ****************************************************/ 
 /** 
  * Normal threshold logic:
  *  - If threshold is 0 => blank
