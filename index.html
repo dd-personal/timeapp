@@ -36,67 +36,68 @@
     </div>
   </div>
 
-<!-- Interval Calculator Tab -->
-<div id="interval" class="tab-content">
-  <div class="calculator-container">
+  <!-- Interval Calculator Tab -->
+  <div id="interval" class="tab-content">
+    <div class="calculator-container">
 
-    <!-- Wrap heading + icon in a flex container -->
-    <div class="heading-with-tooltip">
-      <h1 class="interval-heading">Audit Time Calculator</h1>
-      <span class="tooltip-trigger" id="intervalCalcTooltipTrigger">
-        <i class="fas fa-question-circle"></i>
-      </span>
-      <!-- The tooltip content container -->
-      <div class="tooltip-content" id="intervalCalcTooltipContent">
-        <p>
-          Enter a timestamp: for the number of hours set this calculator will show you the intended start timestamp for each log. You can set at what interval you want the log start times displayed. <p></p> E.G. for a timestamp of 133052 the table will show by default all 161 three minute timestamps, 37 thirteen minute timestamps, etc. <p></p> You can enter "0" to remove a column. 
-        </p>
+      <!-- Wrap heading + icon in a flex container -->
+      <div class="heading-with-tooltip">
+        <h1 class="interval-heading">Audit Time Calculator</h1>
+        <span class="tooltip-trigger" id="intervalCalcTooltipTrigger">
+          <i class="fas fa-question-circle"></i>
+        </span>
+        <!-- The tooltip content container -->
+        <div class="tooltip-content" id="intervalCalcTooltipContent">
+          <p>
+            Enter a timestamp: for the number of hours set this calculator will show you the intended start timestamp for each log. You can set at what interval you want the log start times displayed. <p></p> E.G. for a timestamp of 133052 the table will show by default all 161 three minute timestamps, 37 thirteen minute timestamps, etc. <p></p> You can enter "0" to remove a column. 
+          </p>
+        </div>
       </div>
+
+      <div class="calculator-controls">
+        <div class="input-group">
+          <!-- Updated placeholder and no default value -->
+          <label for="startTime">Start Timestamp (HHmmss):</label>
+          <input
+            type="text"
+            id="startTime"
+            placeholder="enter a timestamp: 133052"
+          />
+        </div>
+        <div class="input-group">
+          <!-- Default to 8 hours -->
+          <label for="hours">Hours:</label>
+          <input type="number" id="hours" value="8" min="1" />
+        </div>
+        <div class="interval-inputs">
+          <div class="interval-group">
+            <label for="interval1">Interval 1 (min):</label>
+            <input type="number" id="interval1" value="3" min="1" />
+          </div>
+          <div class="interval-group">
+            <label for="interval2">Interval 2 (min):</label>
+            <input type="number" id="interval2" value="13" min="1" />
+          </div>
+          <div class="interval-group">
+            <label for="interval3">Interval 3 (min):</label>
+            <input type="number" id="interval3" value="26" min="1" />
+          </div>
+          <div class="interval-group">
+            <label for="interval4">Interval 4 (min):</label>
+            <input type="number" id="interval4" value="55" min="1" />
+          </div>
+        </div>
+        <button class="calculate-button" onclick="calculateIntervals()">Calculate</button>
+      </div>
+
+      <table class="results-table">
+        <thead id="resultsHeader"></thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
     </div>
-
-    <div class="calculator-controls">
-      <div class="input-group">
-        <!-- Updated placeholder and no default value -->
-        <label for="startTime">Start Timestamp (HHmmss):</label>
-        <input
-          type="text"
-          id="startTime"
-          placeholder="enter a timestamp: 133052"
-        />
-      </div>
-      <div class="input-group">
-        <!-- Default to 8 hours -->
-        <label for="hours">Hours:</label>
-        <input type="number" id="hours" value="8" min="1" />
-      </div>
-      <div class="interval-inputs">
-        <div class="interval-group">
-          <label for="interval1">Interval 1 (min):</label>
-          <input type="number" id="interval1" value="3" min="1" />
-        </div>
-        <div class="interval-group">
-          <label for="interval2">Interval 2 (min):</label>
-          <input type="number" id="interval2" value="13" min="1" />
-        </div>
-        <div class="interval-group">
-          <label for="interval3">Interval 3 (min):</label>
-          <input type="number" id="interval3" value="26" min="1" />
-        </div>
-        <div class="interval-group">
-          <label for="interval4">Interval 4 (min):</label>
-          <input type="number" id="interval4" value="55" min="1" />
-        </div>
-      </div>
-      <button class="calculate-button" onclick="calculateIntervals()">Calculate</button>
-    </div>
-
-    <table class="results-table">
-      <thead id="resultsHeader"></thead>
-      <tbody id="resultsBody"></tbody>
-    </table>
   </div>
-</div>
 
   <script src="script.js"></script>
 </body>
 </html>
+

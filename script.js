@@ -30,8 +30,11 @@ let notificationPermissionAsked = false;  // Track if notification permission re
 window.addEventListener("DOMContentLoaded", () => {
   // Show the Chrono tab content
   document.getElementById("chrono").classList.add("active");
-  // Create the first timer automatically
-  createNewTimer();
+  // Restore timers from cookies (if any), or create one if none
+  const restoredCount = restoreTimersFromCookie();
+  if (restoredCount === 0) {
+    createNewTimer();
+  }
 });
 
 /****************************************************
@@ -93,7 +96,7 @@ function addNewTimer() {
  * Create & Initialize a Timer
  * (Uses a custom alarm dropdown)
  ****************************************************/
-function createNewTimer() {
+function createNewTimer(skipSave = false) {
   const index = timers.length;
   const timerId = `timer${index + 1}`;
 
@@ -156,7 +159,8 @@ function createNewTimer() {
           <p>
             Set a desired audit time in minutes. As the timer goes off and the timestamps are logged the value set in this field will give a 
             ✓ for each check that is lower, and a ✘ if the check is late. 
-            <p></p> Every check that is late will also show you the time it should have been. <p></p> E.G. entering 60 minutes here would mean that every 55 minute check
+            <p></p> Every check that is late will also show you the time it should have been. <p></p> E.G. entering 60 minutes here would mean that every 55
+ minute check
             would be good. If you didn't restart the timer until 61 minutes it would show as a bad check and give you the correct timestamp. 
           </p>
         </div>
@@ -246,6 +250,11 @@ function createNewTimer() {
 
   // Setup the custom dropdown logic
   setupAlarmDropdown(t);
+  // Save the new timer to cookies and set up persistence handlers
+  if (!skipSave) {
+    saveTimersToCookie();
+  }
+  t.thresholdEl.addEventListener('input', saveTimersToCookie);
 }
 
 /****************************************************
@@ -276,6 +285,8 @@ function removeTimer(t) {
   if (idx !== -1) {
     timers.splice(idx, 1);
   }
+  // Update cookie storage after removing a timer
+  saveTimersToCookie();
 }
 
 window.addEventListener("DOMContentLoaded", () => {
@@ -565,6 +576,98 @@ function appendLogRow(tbody, timestamp, status) {
   row.appendChild(timeCell);
   row.appendChild(statusCell);
   tbody.appendChild(row);
+  // Persist log entry in cookies
+  saveTimersToCookie();
+}
+
+/****************************************************
+ * Persistent storage with Cookies
+ ****************************************************/
+function getCookie(name) {
+  const cookies = document.cookie.split(';');
+  for (let i = 0; i < cookies.length; i++) {
+    const c = cookies[i].trim();
+    if (c.startsWith(name + '=')) {
+      return decodeURIComponent(c.substring(name.length + 1));
+    }
+  }
+  return '';
+}
+
+function saveTimersToCookie() {
+  // Build data object for all timers
+  const data = [];
+  for (let i = 0; i < timers.length; i++) {
+    const t = timers[i];
+    const timerData = {
+      threshold: t.thresholdEl.value || "",
+      logs: [],
+      lastEventTime: t.lastEventTime ? t.lastEventTime.getTime() : null
+    };
+    const rows = t.logBody.querySelectorAll('tr');
+    rows.forEach(row => {
+      const cells = row.getElementsByTagName('td');
+      if (cells.length >= 2) {
+        const timeText = cells[0].textContent;
+        const statusText = cells[1].textContent;
+        timerData.logs.push({ timestamp: timeText, status: statusText });
+      }
+    });
+    data.push(timerData);
+  }
+  if (data.length > 0) {
+    const jsonStr = JSON.stringify(data);
+    document.cookie = 'timersData=' + encodeURIComponent(jsonStr) + '; max-age=31536000; path=/';
+  } else {
+    // Remove the cookie if no timers remain
+    document.cookie = 'timersData=; max-age=0; path=/';
+  }
+}
+
+function restoreTimersFromCookie() {
+  const cookieData = getCookie('timersData');
+  if (!cookieData) {
+    return 0;
+  }
+  try {
+    const saved = JSON.parse(cookieData);
+    if (!Array.isArray(saved)) {
+      return 0;
+    }
+    let restoredCount = 0;
+    saved.slice(0, maxTimers).forEach(timerObj => {
+      createNewTimer(true);
+      restoredCount++;
+      const t = timers[timers.length - 1];
+      // Restore threshold value
+      if (typeof timerObj.threshold !== 'undefined') {
+        t.thresholdEl.value = timerObj.threshold;
+      }
+      // Restore log entries
+      if (Array.isArray(timerObj.logs)) {
+        timerObj.logs.forEach(entry => {
+          const row = document.createElement('tr');
+          const timeCell = document.createElement('td');
+          const statusCell = document.createElement('td');
+          timeCell.textContent = entry.timestamp || '';
+          statusCell.textContent = entry.status || '';
+          row.appendChild(timeCell);
+          row.appendChild(statusCell);
+          t.logBody.appendChild(row);
+        });
+      }
+      // Restore last event time for threshold calculations
+      if (timerObj.lastEventTime) {
+        t.lastEventTime = new Date(timerObj.lastEventTime);
+      }
+    });
+    // Save restored timers to cookie to refresh persistence
+    saveTimersToCookie();
+    return restoredCount;
+  } catch (e) {
+    console.error('Failed to parse timersData cookie', e);
+    return 0;
+  }
 }
 
 /****************************************************
@@ -659,3 +762,4 @@ function calculateIntervals() {
     resultsBody.innerHTML += rowHTML;
   }
 }
+
