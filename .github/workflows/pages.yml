@@ -3,50 +3,41 @@ name: Build & Deploy GH Pages
 
 on:
   push:
-    branches: [ main ]      # ⬅ change if your default branch is different
-  workflow_dispatch:        # lets you trigger it manually from the Actions tab
+    branches: [ main ]        # ← adjust if your default branch is different
+  workflow_dispatch:
 
-# These top-level permissions are required for Pages
 permissions:
   contents: read
   pages: write
   id-token: write
 
 jobs:
-  # -------------------- 1️⃣  BUILD & PACKAGE --------------------
   build:
     runs-on: ubuntu-latest
-
     steps:
-    # 1 ▸ Check out your repo
-    - uses: actions/checkout@v4
+      # 1 ▸ Checkout your repo
+      - uses: actions/checkout@v4
 
-    # 2 ▸ Inject the secret hashes into /login/auth.js
-    - name: Inject secret hashes into auth.js
-      env:
-        USER_HASH: ${{ secrets.QUIZ_USER_HASH }}
-        PASS_HASH: ${{ secrets.QUIZ_PASS_HASH }}
-      run: |
-        sed -i "s/__USER_HASH__/$USER_HASH/" login/auth.js
-        sed -i "s/__PASS_HASH__/$PASS_HASH/" login/auth.js
+      # 2 ▸ Inject the secret hashes
+      - name: Inject login hashes
+        env:
+          USER_HASH: ${{ secrets.QUIZ_USER_HASH }}
+          PASS_HASH: ${{ secrets.QUIZ_PASS_HASH }}
+        run: |
+          sed -i "s/__USER_HASH__/$USER_HASH/" login/auth.js
+          sed -i "s/__PASS_HASH__/$PASS_HASH/" login/auth.js
 
-    # 3 ▸ Upload everything as a Pages artifact
-    - name: Upload site bundle
-      uses: actions/upload-pages-artifact@v2
-      with:
-        path: .              # root of your static site
+      # 3 ▸ Package the site for Pages (now v3)
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .              # root of your static site
 
-  # -------------------- 2️⃣  DEPLOY --------------------
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    # Optional but nice: expose the public URL in the run summary
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    # The deploy itself is **a step**, not a job-level 'uses'
     steps:
-    - name: Deploy to GitHub Pages
-      id: deployment
-      uses: actions/deploy-pages@v3
+      # 4 ▸ Deploy (now v4)
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
