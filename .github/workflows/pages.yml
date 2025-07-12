@@ -1,0 +1,29 @@
+name: Build & Deploy GH Pages
+on:
+  push:
+    branches: [main]          # adjust if needed
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Inject secret hashes into /login/auth.js
+      env:
+        USER_HASH: ${{ secrets.QUIZ_USER_HASH }}
+        PASS_HASH: ${{ secrets.QUIZ_PASS_HASH }}
+      run: |
+        sed -i "s/__USER_HASH__/$USER_HASH/" login/auth.js
+        sed -i "s/__PASS_HASH__/$PASS_HASH/" login/auth.js
+
+    - name: Build static site   # nothing to compile, so just upload
+      uses: actions/upload-pages-artifact@v2
+      with:
+        path: .
+
+  deploy:
+    needs: build
+    permissions:
+      pages: write
+      id-token: write
+    uses: actions/deploy-pages@v3
