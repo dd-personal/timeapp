@@ -3,7 +3,7 @@ name: Build & Deploy GH Pages
 
 on:
   push:
-    branches: [ main ]        # ← adjust if your default branch is different
+    branches: [ main ]          # change if your default branch differs
   workflow_dispatch:
 
 permissions:
@@ -14,30 +14,38 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      # 1 ▸ Checkout your repo
-      - uses: actions/checkout@v4
+    # ───────────────────────────── 1. checkout ───────────────────────────
+    - uses: actions/checkout@v4
 
-      # 2 ▸ Inject the secret hashes
-      - name: Inject login hashes
-        env:
-          USER_HASH: ${{ secrets.QUIZ_USER_HASH }}
-          PASS_HASH: ${{ secrets.QUIZ_PASS_HASH }}
-        run: |
-          sed -i "s/__USER_HASH__/$USER_HASH/" login/auth.js
-          sed -i "s/__PASS_HASH__/$PASS_HASH/" login/auth.js
+    # ───────────────────── 2. inject username / password ─────────────────
+    - name: Inject login hashes
+      env:
+        USER_HASH: ${{ secrets.QUIZ_USER_HASH }}
+        PASS_HASH: ${{ secrets.QUIZ_PASS_HASH }}
+      run: |
+        sed -i "s/__USER_HASH__/$USER_HASH/" login/auth.js
+        sed -i "s/__PASS_HASH__/$PASS_HASH/" login/auth.js
 
-      # 3 ▸ Package the site for Pages (now v3)
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: .              # root of your static site
+    # ──────────────── 3. build CSV list & patch quiz_app.html ────────────
+    - name: Inject CSV list for quiz picker
+      run: |
+        # Grab every *.csv in login/, strip the path, keep the real filename
+        LIST=$(ls -1 login/*.csv | sed 's#.*/##' | paste -sd "," -)
+        # Replace the placeholder inside quiz_app.html
+        sed -i "s|__CSV_LIST__|$LIST|" login/quiz_app.html
+
+    # ────────────────────────── 4. upload artifact ───────────────────────
+    - name: Upload Pages artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: .                 # root of your static site
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      # 4 ▸ Deploy (now v4)
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

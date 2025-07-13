@@ -148,104 +148,162 @@
   </div>
 
   <script>
-    const fileInput  = document.getElementById("fileInput");
-    const loader     = document.getElementById("loader");
-    const quizCard   = document.getElementById("quiz-card");
+/* -----------------------------------------------------------------------
+   1.  BUILT-IN QUIZ LIST  ( placeholder replaced by the workflow )
+   --------------------------------------------------------------------- */
+const BUILT_IN_QUIZZES = "__CSV_LIST__".split(",").filter(Boolean);
 
-    const numberEl   = document.getElementById("question-number");
-    const questionEl = document.getElementById("question-text");
-    const choicesEl  = document.getElementById("choices");
-    const feedbackEl = document.getElementById("feedback");
-    const backBtn    = document.getElementById("backBtn");
-    const nextBtn    = document.getElementById("nextBtn");
+/* -----------------------------------------------------------------------
+   2.  UI elements ( reuse existing loader/inputs )
+   --------------------------------------------------------------------- */
+const quizSelect = document.createElement("select");
+quizSelect.style.padding = "0.6rem";
+quizSelect.style.border  = "2px solid #2563eb";
+quizSelect.style.borderRadius = "0.5rem";
+quizSelect.style.cursor = "pointer";
+quizSelect.style.background = "#eef2ff";
+quizSelect.id = "quizSelect";
 
-    let quizData = [];
-    let currentIndex = 0;
-    let answered = false;
+const fileInput = document.createElement("input");
+fileInput.type = "file";
+fileInput.accept = ".csv";
+fileInput.id = "fileInput";
+fileInput.style.display = "none";            // toggled later
 
-    fileInput.addEventListener("change", (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
+/* Inject the dropdown just above the old <input type=file> */
+const loader = document.getElementById("loader");
+loader.insertBefore(quizSelect, loader.firstChild);
+loader.insertBefore(document.createElement("br"), quizSelect.nextSibling);
+loader.insertBefore(fileInput, quizSelect.nextSibling);
 
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        try {
-          const csvText = evt.target.result;
-          const parsed = Papa.parse(csvText, {
-            header: true,
-            skipEmptyLines: true,
-            transformHeader: (h) => h.trim(),
-          });
+/* -----------------------------------------------------------------------
+   3.  Build & populate the dropdown
+   --------------------------------------------------------------------- */
+function niceLabel(filename){
+  return filename
+    .replace(/\.csv$/i, "")   // drop extension
+    .replace(/ - .*$/i, "")   // drop anything after " - "
+    .trim();
+}
 
-          quizData = parsed.data.filter((row) => row.Question?.trim());
-          if (!quizData.length) throw new Error("CSV appears empty or mis‑formatted.");
+function fillSelect(){
+  /* Built-ins */
+  BUILT_IN_QUIZZES.forEach(f=>{
+    const opt=document.createElement("option");
+    opt.value=f;
+    opt.textContent=niceLabel(f);      // <-- human-friendly label
+    quizSelect.appendChild(opt);
+  });
+  /* Upload option */
+  const uploadOpt=document.createElement("option");
+  uploadOpt.value="__upload__";
+  uploadOpt.textContent="Upload your own CSV…";
+  quizSelect.appendChild(uploadOpt);
 
-          // Switch to quiz view
-          loader.style.display = "none";
-          quizCard.style.display = "flex";
-          currentIndex = 0;
-          renderQuestion();
-        } catch (err) {
-          alert("Error processing CSV: " + err.message);
-        }
-      };
-      reader.readAsText(file);
-    });
+  quizSelect.selectedIndex=-1;         // nothing pre-selected
+}
+fillSelect();
 
-    function renderQuestion() {
-      if (!quizData.length) return;
-      answered = false;
-      feedbackEl.textContent = "";
-      const q = quizData[currentIndex];
-      numberEl.textContent = `Question ${currentIndex + 1} of ${quizData.length}`;
-      questionEl.textContent = q.Question;
+/* -----------------------------------------------------------------------
+   4.  Enable / disable UI and wire up start behaviour
+   --------------------------------------------------------------------- */
+const startBtn=document.createElement("button");
+startBtn.textContent="Start Quiz";
+startBtn.className="start-btn";
+startBtn.style.padding="0.6rem 1.3rem";
+startBtn.style.border="none";
+startBtn.style.background="#2563eb";
+startBtn.style.color="#fff";
+startBtn.style.borderRadius="0.5rem";
+startBtn.style.cursor="pointer";
+startBtn.disabled=true;
+loader.appendChild(startBtn);
 
-      // Build answer choices
-      choicesEl.innerHTML = "";
-      const choiceKeys = ["A", "B", "C", "D"];
-      choiceKeys.forEach((key) => {
-        const text = q[key];
-        if (!text) return; // skip empty columns
-        const btn = document.createElement("button");
-        btn.className = "choice-btn";
-        btn.innerHTML = `<strong>${key}.</strong> ${text}`;
-        btn.addEventListener("click", () => selectAnswer(btn, key, q.Answer?.trim()));
-        choicesEl.appendChild(btn);
-      });
+quizSelect.addEventListener("change",()=>{
+  const own = quizSelect.value==="__upload__";
+  fileInput.style.display = own?"block":"none";
+  startBtn.disabled = own ? !fileInput.files.length : false;
+});
+fileInput.addEventListener("change",()=>startBtn.disabled = !fileInput.files.length);
 
-      backBtn.disabled = currentIndex === 0;
-      nextBtn.disabled = currentIndex === quizData.length - 1;
-    }
+/* Existing refs for quiz logic ----------------------------------------- */
+const quizCard   = document.getElementById("quiz-card");
+const numberEl   = document.getElementById("question-number");
+const questionEl = document.getElementById("question-text");
+const choicesEl  = document.getElementById("choices");
+const feedbackEl = document.getElementById("feedback");
+const backBtn    = document.getElementById("backBtn");
+const nextBtn    = document.getElementById("nextBtn");
 
-    function selectAnswer(btn, selectedKey, correctKey) {
-      if (answered) return;
-      answered = true;
-      choicesEl.querySelectorAll(".choice-btn").forEach((b) => (b.disabled = true));
+let quizData=[],currentIndex=0,answered=false;
 
-      if (selectedKey === correctKey) {
-        btn.classList.add("choice-selected", "correct");
-        feedbackEl.textContent = "✅ Correct!";
-        feedbackEl.style.color = "var(--correct)";
-      } else {
-        btn.classList.add("choice-selected", "incorrect");
-        feedbackEl.textContent = `❌ Incorrect. Correct answer: ${correctKey}.`;
-        feedbackEl.style.color = "var(--incorrect)";
-      }
-    }
+/* -------------------- Loaders */
+function loadBuiltIn(filename){
+  fetch(encodeURIComponent(filename))
+    .then(r=>r.text())
+    .then(processCSV)
+    .catch(err=>alert("Fetch error: "+err));
+}
+function loadUploaded(file){
+  const reader=new FileReader();
+  reader.onload=e=>processCSV(e.target.result);
+  reader.readAsText(file);
+}
 
-    backBtn.addEventListener("click", () => {
-      if (currentIndex > 0) {
-        currentIndex--;
-        renderQuestion();
-      }
-    });
+/* Click “Start Quiz” */
+startBtn.addEventListener("click",()=>{
+  if(quizSelect.value==="__upload__"){
+    loadUploaded(fileInput.files[0]);
+  }else{
+    loadBuiltIn(quizSelect.value);
+  }
+});
 
-    nextBtn.addEventListener("click", () => {
-      if (currentIndex < quizData.length - 1) {
-        currentIndex++;
-        renderQuestion();
-      }
-    });
-  </script>
+/* -------------------- CSV → questions */
+function processCSV(csvText){
+  try{
+    const parsed=Papa.parse(csvText,{header:true,skipEmptyLines:true,
+      transformHeader:h=>h.trim()});
+    quizData=parsed.data.filter(r=>r.Question?.trim());
+    if(!quizData.length) throw new Error("Empty or bad CSV");
+    loader.style.display="none"; quizCard.style.display="flex";
+    currentIndex=0; renderQuestion();
+  }catch(e){alert("CSV error: "+e.message);}
+}
+
+/* -------------------- Render / nav (unchanged from your file) */
+function renderQuestion(){
+  answered=false; feedbackEl.textContent="";
+  const q=quizData[currentIndex];
+  numberEl.textContent=`Question ${currentIndex+1} of ${quizData.length}`;
+  questionEl.textContent=q.Question;
+  choicesEl.innerHTML="";
+  ["A","B","C","D"].forEach(k=>{
+    const txt=q[k]; if(!txt) return;
+    const btn=document.createElement("button");
+    btn.className="choice-btn";
+    btn.innerHTML=`<strong>${k}.</strong> ${txt}`;
+    btn.onclick=()=>selectAnswer(btn,k,q.Answer?.trim());
+    choicesEl.appendChild(btn);
+  });
+  backBtn.disabled=currentIndex===0;
+  nextBtn.disabled=currentIndex===quizData.length-1;
+}
+function selectAnswer(btn,k,correct){
+  if(answered) return; answered=true;
+  choicesEl.querySelectorAll(".choice-btn").forEach(b=>b.disabled=true);
+  if(k===correct){
+    btn.classList.add("choice-selected","correct");
+    feedbackEl.textContent="✅ Correct!"; feedbackEl.style.color="var(--correct)";
+  }else{
+    btn.classList.add("choice-selected","incorrect");
+    feedbackEl.textContent=`❌ Incorrect. Correct answer: ${correct}.`;
+    feedbackEl.style.color="var(--incorrect)";
+  }
+}
+backBtn.onclick=()=>{if(currentIndex>0){currentIndex--;renderQuestion();}};
+nextBtn.onclick=()=>{if(currentIndex<quizData.length-1){currentIndex++;renderQuestion();}};
+</script>
+
 </body>
 </html>
