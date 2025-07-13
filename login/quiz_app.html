@@ -128,9 +128,26 @@
   </style>
 </head>
 <body>
-  
+  <!-- File picker screen -->
+  <div id="loader">
+    <h2>Select a Quiz CSV to Begin</h2>
+    <input type="file" id="fileInput" accept=".csv" />
+    <p style="font-size:0.9rem;color:#666;margin:0">CSV must include columns: <code>Question, A, B, C, D, Answer</code></p>
+  </div>
 
-<script>
+  <!-- Quiz card (hidden until CSV loads) -->
+  <div id="quiz-card">
+    <div id="question-number"></div>
+    <div id="question-text"></div>
+    <div id="choices"></div>
+    <div id="feedback"></div>
+    <div id="nav-buttons">
+      <button id="backBtn" disabled>Back</button>
+      <button id="nextBtn" disabled>Next</button>
+    </div>
+  </div>
+
+  <script>
 /* -----------------------------------------------------------------------
    1.  BUILT-IN QUIZ LIST  ( placeholder replaced by the workflow )
    --------------------------------------------------------------------- */
