@@ -1,232 +1,93 @@
-<!--
-  Simple Offline CSV Quiz App (No Server Needed)
-  ------------------------------------------------
-  • Open this HTML file directly in your browser (file://…).
-  • Click "Choose CSV" and select your quiz CSV (must have columns: Question, A, B, C, D, Answer).
-  • The quiz runs entirely in‑browser via FileReader & PapaParse.
--->
+<!-- login/quiz_app.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Offline CSV Quiz</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>CSV Quiz</title>
+
   <!-- PapaParse for CSV parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+
   <style>
-    :root {
-      --primary: #2563eb;
-      --correct: #16a34a;
-      --incorrect: #dc2626;
+    :root{--primary:#2563eb;--correct:#16a34a;--incorrect:#dc2626;}
+
+    body{
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      background:#f5f6fa;display:flex;justify-content:center;align-items:center;
+      min-height:100vh;margin:0;padding:1rem;
     }
 
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: #f5f6fa;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      margin: 0;
+    /* Loader panel ------------------------------------------------------- */
+    #loader{
+      text-align:center;background:#fff;padding:2rem 3rem;border-radius:.75rem;
+      box-shadow:0 2px 12px rgba(0,0,0,.1);display:flex;flex-direction:column;gap:1.25rem;
+      width:min(100%,480px);
+    }
+    select{
+      padding:.6rem;border:2px solid var(--primary);border-radius:.5rem;background:#eef2ff;
+      cursor:pointer;font-size:1rem;
+    }
+    button#startBtn{
+      background:var(--primary);color:#fff;border:none;border-radius:.5rem;
+      padding:.7rem 1.3rem;font-size:1rem;cursor:pointer;
     }
 
-    /* Loader / File‑picker panel */
-    #loader {
-      text-align: center;
-      background: #fff;
-      padding: 2rem 3rem;
-      border-radius: 0.75rem;
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
+    /* Quiz card ---------------------------------------------------------- */
+    #quiz-card{
+      background:#fff;border-radius:.75rem;box-shadow:0 2px 12px rgba(0,0,0,.1);
+      width:min(100%,640px);padding:2rem;display:none;flex-direction:column;gap:1.25rem;
     }
+    #question-number{font-size:1.1rem;font-weight:600;color:#666}
+    #question-text{font-size:1.3rem;font-weight:700}
 
-    #fileInput {
-      padding: 0.6rem 1rem;
-      border: 2px dashed var(--primary);
-      border-radius: 0.5rem;
-      cursor: pointer;
-      background: #eef2ff;
+    .choice-btn{
+      width:100%;text-align:left;padding:.75rem 1rem;border:2px solid #ddd;
+      border-radius:.5rem;background:#fafafa;cursor:pointer;transition:.2s;
     }
+    .choice-btn:hover{background:#f0f0f0}
+    .choice-selected.correct{border-color:var(--correct);background:#dcfce7}
+    .choice-selected.incorrect{border-color:var(--incorrect);background:#fee2e2}
 
-    /* Quiz card */
-    #quiz-card {
-      background: #fff;
-      border-radius: 0.75rem;
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-      width: min(90%, 620px);
-      padding: 2rem;
-      display: none; /* shown after CSV loads */
-      flex-direction: column;
-      gap: 1.25rem;
-    }
-
-    #question-number {
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: #666;
-    }
-
-    #question-text {
-      font-size: 1.3rem;
-      font-weight: 700;
-    }
-
-    .choice-btn {
-      padding: 0.75rem 1rem;
-      border: 2px solid #ddd;
-      border-radius: 0.5rem;
-      cursor: pointer;
-      background: #fafafa;
-      text-align: left;
-      transition: border-color 0.2s, background 0.2s;
-      width: 100%;
-    }
-
-    .choice-btn:hover {
-      background: #f0f0f0;
-    }
-
-    .choice-selected.correct {
-      border-color: var(--correct);
-      background: #dcfce7;
-    }
-
-    .choice-selected.incorrect {
-      border-color: var(--incorrect);
-      background: #fee2e2;
-    }
-
-    #feedback {
-      font-size: 1.1rem;
-      font-weight: 600;
-    }
-
-    #nav-buttons {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 1rem;
-    }
-
-    #nav-buttons button {
-      padding: 0.6rem 1.4rem;
-      border: none;
-      border-radius: 0.5rem;
-      font-size: 1rem;
-      cursor: pointer;
-      background: var(--primary);
-      color: #fff;
-      transition: opacity 0.2s;
-    }
-
-    #nav-buttons button[disabled] {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
+    #feedback{font-size:1.1rem;font-weight:600}
+    #nav-buttons{display:flex;justify-content:space-between;margin-top:1rem}
+    #nav-buttons button{background:var(--primary);color:#fff;border:none;border-radius:.5rem;
+      padding:.6rem 1.4rem;font-size:1rem;cursor:pointer;transition:.2s;}
+    #nav-buttons button[disabled]{opacity:.4;cursor:not-allowed}
   </style>
 </head>
 <body>
-  <!-- File picker screen -->
-  <div id="loader">
-    <h2>Select a Quiz CSV to Begin</h2>
-    <input type="file" id="fileInput" accept=".csv" />
-    <p style="font-size:0.9rem;color:#666;margin:0">CSV must include columns: <code>Question, A, B, C, D, Answer</code></p>
-  </div>
 
-  <!-- Quiz card (hidden until CSV loads) -->
-  <div id="quiz-card">
-    <div id="question-number"></div>
-    <div id="question-text"></div>
-    <div id="choices"></div>
-    <div id="feedback"></div>
-    <div id="nav-buttons">
-      <button id="backBtn" disabled>Back</button>
-      <button id="nextBtn" disabled>Next</button>
-    </div>
-  </div>
+<!-- 1️⃣  Picker -->
+<div id="loader">
+  <h2>Select a Quiz</h2>
+  <select id="quizSelect"></select>
+  <button id="startBtn">Start Quiz</button>
+</div>
 
-  <script>
+<!-- 2️⃣  Quiz card -->
+<div id="quiz-card">
+  <div id="question-number"></div>
+  <div id="question-text"></div>
+  <div id="choices"></div>
+  <div id="feedback"></div>
+  <div id="nav-buttons">
+    <button id="backBtn" disabled>Back</button>
+    <button id="nextBtn" disabled>Next</button>
+  </div>
+</div>
+
+<script>
 /* -----------------------------------------------------------------------
-   1.  BUILT-IN QUIZ LIST  ( placeholder replaced by the workflow )
-   --------------------------------------------------------------------- */
+   Built-in CSV list – the workflow replaces __CSV_LIST__ at deploy time
+------------------------------------------------------------------------ */
 const BUILT_IN_QUIZZES = "__CSV_LIST__".split(",").filter(Boolean);
 
-/* -----------------------------------------------------------------------
-   2.  UI elements ( reuse existing loader/inputs )
-   --------------------------------------------------------------------- */
-const quizSelect = document.createElement("select");
-quizSelect.style.padding = "0.6rem";
-quizSelect.style.border  = "2px solid #2563eb";
-quizSelect.style.borderRadius = "0.5rem";
-quizSelect.style.cursor = "pointer";
-quizSelect.style.background = "#eef2ff";
-quizSelect.id = "quizSelect";
+/* ---------- UI refs */
+const quizSelect = document.getElementById("quizSelect");
+const startBtn   = document.getElementById("startBtn");
+const loader     = document.getElementById("loader");
 
-const fileInput = document.createElement("input");
-fileInput.type = "file";
-fileInput.accept = ".csv";
-fileInput.id = "fileInput";
-fileInput.style.display = "none";            // toggled later
-
-/* Inject the dropdown just above the old <input type=file> */
-const loader = document.getElementById("loader");
-loader.insertBefore(quizSelect, loader.firstChild);
-loader.insertBefore(document.createElement("br"), quizSelect.nextSibling);
-loader.insertBefore(fileInput, quizSelect.nextSibling);
-
-/* -----------------------------------------------------------------------
-   3.  Build & populate the dropdown
-   --------------------------------------------------------------------- */
-function niceLabel(filename){
-  return filename
-    .replace(/\.csv$/i, "")   // drop extension
-    .replace(/ - .*$/i, "")   // drop anything after " - "
-    .trim();
-}
-
-function fillSelect(){
-  /* Built-ins */
-  BUILT_IN_QUIZZES.forEach(f=>{
-    const opt=document.createElement("option");
-    opt.value=f;
-    opt.textContent=niceLabel(f);      // <-- human-friendly label
-    quizSelect.appendChild(opt);
-  });
-  /* Upload option */
-  const uploadOpt=document.createElement("option");
-  uploadOpt.value="__upload__";
-  uploadOpt.textContent="Upload your own CSV…";
-  quizSelect.appendChild(uploadOpt);
-
-  quizSelect.selectedIndex=-1;         // nothing pre-selected
-}
-fillSelect();
-
-/* -----------------------------------------------------------------------
-   4.  Enable / disable UI and wire up start behaviour
-   --------------------------------------------------------------------- */
-const startBtn=document.createElement("button");
-startBtn.textContent="Start Quiz";
-startBtn.className="start-btn";
-startBtn.style.padding="0.6rem 1.3rem";
-startBtn.style.border="none";
-startBtn.style.background="#2563eb";
-startBtn.style.color="#fff";
-startBtn.style.borderRadius="0.5rem";
-startBtn.style.cursor="pointer";
-startBtn.disabled=true;
-loader.appendChild(startBtn);
-
-quizSelect.addEventListener("change",()=>{
-  const own = quizSelect.value==="__upload__";
-  fileInput.style.display = own?"block":"none";
-  startBtn.disabled = own ? !fileInput.files.length : false;
-});
-fileInput.addEventListener("change",()=>startBtn.disabled = !fileInput.files.length);
-
-/* Existing refs for quiz logic ----------------------------------------- */
 const quizCard   = document.getElementById("quiz-card");
 const numberEl   = document.getElementById("question-number");
 const questionEl = document.getElementById("question-text");
@@ -235,43 +96,44 @@ const feedbackEl = document.getElementById("feedback");
 const backBtn    = document.getElementById("backBtn");
 const nextBtn    = document.getElementById("nextBtn");
 
-let quizData=[],currentIndex=0,answered=false;
+/* ---------- Helpers */
+function niceLabel(filename){
+  return filename.replace(/\.csv$/i,"").replace(/ - .*$/i,"").trim();
+}
 
-/* -------------------- Loaders */
+/* ---------- Populate dropdown & pre-select first quiz */
+BUILT_IN_QUIZZES.forEach(f=>{
+  const opt=document.createElement("option");
+  opt.value=f; opt.textContent=niceLabel(f);
+  quizSelect.appendChild(opt);
+});
+if(quizSelect.options.length){ quizSelect.selectedIndex = 0; }
+
+/* ---------- Loaders */
 function loadBuiltIn(filename){
   fetch(encodeURIComponent(filename))
     .then(r=>r.text())
     .then(processCSV)
-    .catch(err=>alert("Fetch error: "+err));
-}
-function loadUploaded(file){
-  const reader=new FileReader();
-  reader.onload=e=>processCSV(e.target.result);
-  reader.readAsText(file);
+    .catch(e=>alert("Fetch error: "+e));
 }
 
-/* Click “Start Quiz” */
-startBtn.addEventListener("click",()=>{
-  if(quizSelect.value==="__upload__"){
-    loadUploaded(fileInput.files[0]);
-  }else{
-    loadBuiltIn(quizSelect.value);
-  }
-});
+/* ---------- Start button */
+startBtn.addEventListener("click",()=>loadBuiltIn(quizSelect.value));
 
-/* -------------------- CSV → questions */
+/* ---------- CSV → quizData */
+let quizData=[],currentIndex=0,answered=false;
 function processCSV(csvText){
   try{
     const parsed=Papa.parse(csvText,{header:true,skipEmptyLines:true,
-      transformHeader:h=>h.trim()});
+        transformHeader:h=>h.trim()});
     quizData=parsed.data.filter(r=>r.Question?.trim());
-    if(!quizData.length) throw new Error("Empty or bad CSV");
+    if(!quizData.length) throw new Error("Empty or malformed CSV");
     loader.style.display="none"; quizCard.style.display="flex";
     currentIndex=0; renderQuestion();
   }catch(e){alert("CSV error: "+e.message);}
 }
 
-/* -------------------- Render / nav (unchanged from your file) */
+/* ---------- Render / navigation */
 function renderQuestion(){
   answered=false; feedbackEl.textContent="";
   const q=quizData[currentIndex];
@@ -304,6 +166,5 @@ function selectAnswer(btn,k,correct){
 backBtn.onclick=()=>{if(currentIndex>0){currentIndex--;renderQuestion();}};
 nextBtn.onclick=()=>{if(currentIndex<quizData.length-1){currentIndex++;renderQuestion();}};
 </script>
-
 </body>
 </html>
