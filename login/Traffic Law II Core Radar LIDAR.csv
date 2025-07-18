@@ -54,7 +54,7 @@ LIDAR measures vehicle speed primarily using:,Sound wave reflection,Radio wave f
 The typical wavelength used in police LIDAR devices is:,24.150 GHz,10.525 GHz,904-905 nm,330 THz,C
 Which component is NOT part of a basic LIDAR system?,Beam splitter,Lasing medium,Timer/computer,Radio transmitter,D
 "The ""cosine effect"" in LIDAR operations occurs when:",The target vehicle is moving directly toward the device,The officer aims at multiple vehicles simultaneously,There's an angle between the vehicle's path and LIDAR position,The device experiences radio frequency interference,C
-When experiencing cosine effect patrol speed must be verified against:,Higher than actual speed,Lower than actual speed,Unaffected by the angle,Identical to radar measurements,B
+When experiencing cosine effect patrol speed is:,Higher than actual speed,Lower than actual speed,Unaffected by the angle,Identical to radar measurements,B
 The sweep effect in LIDAR can be minimized by:,Using the device in rainy conditions,Aiming steadily at one vehicle part,Increasing the pulse repetition rate,Targeting dark-colored vehicles,B
 LIDAR beam width at 1000 feet is approximately:,317 feet,210 feet,157 feet,3 feet,D
 Before courtroom testimony officers must verify LIDAR accuracy with:,Internal circuit checks only,Light tests only,Before-and-after operational tests,No testing required if device is new,C
