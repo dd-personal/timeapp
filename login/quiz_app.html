@@ -73,6 +73,10 @@
   <div id="feedback"></div>
   <div id="nav-buttons">
     <button id="backBtn" disabled>Back</button>
+    <div>
+      <input id="jumpInput" type="number" min="1" placeholder="Go to #" style="width: 80px; padding: 0.5rem;" />
+      <button id="jumpBtn">Go</button>
+    </div>
     <button id="nextBtn" disabled>Next</button>
   </div>
 </div>
@@ -95,6 +99,8 @@ const choicesEl  = document.getElementById("choices");
 const feedbackEl = document.getElementById("feedback");
 const backBtn    = document.getElementById("backBtn");
 const nextBtn    = document.getElementById("nextBtn");
+const jumpInput  = document.getElementById("jumpInput");
+const jumpBtn    = document.getElementById("jumpBtn");
 
 /* ---------- Helpers */
 function niceLabel(filename){
@@ -165,6 +171,16 @@ function selectAnswer(btn,k,correct){
 }
 backBtn.onclick=()=>{if(currentIndex>0){currentIndex--;renderQuestion();}};
 nextBtn.onclick=()=>{if(currentIndex<quizData.length-1){currentIndex++;renderQuestion();}};
+
+jumpBtn.onclick = () => {
+  const target = parseInt(jumpInput.value, 10);
+  if (!isNaN(target) && target >= 1 && target <= quizData.length) {
+    currentIndex = target - 1;
+    renderQuestion();
+  } else {
+    alert(`Please enter a number between 1 and ${quizData.length}.`);
+  }
+};
 </script>
 </body>
 </html>
